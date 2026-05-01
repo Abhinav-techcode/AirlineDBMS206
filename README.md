@@ -107,9 +107,6 @@ npm start
 
 ---
 
-## 👨‍💻 Author
-
-**Abhinav Gupta**
 
 ---
 
