@@ -2,13 +2,7 @@ const asyncHandler = require("../utils/asyncHandler");
 const { createFlight, listFlights } = require("../models/flightModel");
 const { pool } = require("../config/db");
 
-const AIRLINE_IMAGES = [
-  "https://images.unsplash.com/photo-1436491865332-7a61a109cc05?auto=format&fit=crop&w=200&q=80",
-  "https://images.unsplash.com/photo-1529074963764-98f45c47344b?auto=format&fit=crop&w=200&q=80",
-  "https://images.unsplash.com/photo-1504198453319-5ce911bafcde?auto=format&fit=crop&w=200&q=80",
-];
-
-const getFlightImage = (index) => AIRLINE_IMAGES[index % AIRLINE_IMAGES.length];
+// No hardcoded images — airline branding should come from DB or asset storage
 
 const formatDuration = (minutes) => {
   const totalMinutes = Number(minutes || 0);
@@ -141,38 +135,50 @@ exports.searchFlights = asyncHandler(async (req, res) => {
     params
   );
 
-  const flights = rows.map((row, index) => ({
-    id: row.instance_id || row.schedule_id,
-    flight_id: row.flight_id,
-    schedule_id: row.schedule_id,
-    instance_id: row.instance_id || null,
-    departure_date: row.departure_date,
-    flight_number: row.flight_number,
-    airline: row.airline_name,
-    airlineName: row.airline_name,
-    airlineCode: row.airline_code,
-    code: row.flight_number,
-    aircraft: row.aircraft_model,
-    cabin: String(req.query.cabin || "Economy").toUpperCase(),
-    from: row.source_code,
-    fromCity: row.source_city,
-    fromAirport: row.source_airport,
-    to: row.destination_code,
-    toCity: row.destination_city,
-    toAirport: row.destination_airport,
-    source_city: row.source_city,
-    destination_city: row.destination_city,
-    time: row.departure_time,
-    depart: row.departure_time,
-    arrive: row.arrival_time,
-    durationMinutes: Number(row.duration || 0),
-    durationLabel: formatDuration(row.duration),
-    price: Number(row.schedule_price || 0),
-    oldPrice: Number(row.schedule_price || 0) + 2500,
-    seats: Number(row.available_seats || 0),
-    tags: ["Best Price", "Non-stop", "Live Inventory"],
-    image: getFlightImage(index),
-  }));
+  const flights = rows.map((row) => {
+    const price = Number(row.schedule_price || 0);
+    const seats = Number(row.available_seats || 0);
+
+    // Dynamic tags based on real flight data
+    const tags = [];
+    if (seats > 0 && seats <= 10) tags.push("Few Seats Left");
+    if (seats > 50) tags.push("Best Availability");
+    tags.push("Non-stop");
+    tags.push("Live Inventory");
+
+    return {
+      id: row.instance_id || row.schedule_id,
+      flight_id: row.flight_id,
+      schedule_id: row.schedule_id,
+      instance_id: row.instance_id || null,
+      departure_date: row.departure_date,
+      flight_number: row.flight_number,
+      airline: row.airline_name,
+      airlineName: row.airline_name,
+      airlineCode: row.airline_code,
+      code: row.flight_number,
+      aircraft: row.aircraft_model,
+      cabin: String(req.query.cabin || "Economy").toUpperCase(),
+      from: row.source_code,
+      fromCity: row.source_city,
+      fromAirport: row.source_airport,
+      to: row.destination_code,
+      toCity: row.destination_city,
+      toAirport: row.destination_airport,
+      source_city: row.source_city,
+      destination_city: row.destination_city,
+      time: row.departure_time,
+      depart: row.departure_time,
+      arrive: row.arrival_time,
+      durationMinutes: Number(row.duration || 0),
+      durationLabel: formatDuration(row.duration),
+      price,
+      oldPrice: price > 0 ? Math.round(price * 1.15) : 0,
+      seats,
+      tags,
+      image: `https://ui-avatars.com/api/?name=${encodeURIComponent(row.airline_name || "Airline")}&background=7048e8&color=fff&size=80&bold=true`,
+    };
+  });
 
   res.json({
     success: true,

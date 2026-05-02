@@ -92,21 +92,21 @@ const BookingReview = () => {
   }, [passengerCount, state?.selectedSeats, state?.seats]);
 
   const flight = state?.flight || {
-    airline: "ZoshAir",
-    airlineName: "ZoshAir",
-    airlineCode: "ZA",
-    code: state?.flight_number || "FT101",
-    from: state?.from || "BOM",
-    to: state?.to || "CCU",
-    departureTime: "13:00",
-    arrivalTime: "15:00",
-    departureDate: state?.departureDate || "Apr 3, 2026",
-    duration: "2h 00m",
-    aircraft: "Boeing 737-800",
+    airline: state?.airline || "N/A",
+    airlineName: state?.airlineName || "N/A",
+    airlineCode: state?.airlineCode || "",
+    code: state?.flight_number || "N/A",
+    from: state?.from || "N/A",
+    to: state?.to || "N/A",
+    departureTime: state?.departureTime || "N/A",
+    arrivalTime: state?.arrivalTime || "N/A",
+    departureDate: state?.departureDate || "Pending",
+    duration: state?.duration || "N/A",
+    aircraft: state?.aircraft || "N/A",
     cabin: state?.travelClass || "Economy",
-    price: Number(state?.price || 4200),
-    originName: state?.flight?.fromAirport || "Chhatrapati Shivaji Maharaj International Airport",
-    destinationName: state?.flight?.toAirport || "Netaji Subhas Chandra Bose International Airport",
+    price: Number(state?.price || 0),
+    originName: state?.fromAirport || "Departure airport pending",
+    destinationName: state?.toAirport || "Arrival airport pending",
   };
 
   const [secureTrip, setSecureTrip] = useState(false);

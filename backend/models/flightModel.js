@@ -23,6 +23,7 @@ const mapFlightRow = (row) => ({
   route: `${row.source_code} - ${row.destination_code}`,
   schedules_count: Number(row.schedules_count || 0),
   starting_price: Number(row.starting_price || 0),
+  booked_seats: Number(row.booked_seats || 0),
 });
 
 const getFlightsBaseQuery = `
@@ -45,13 +46,15 @@ const getFlightsBaseQuery = `
     dst.name AS destination_airport,
     f.duration,
     COUNT(DISTINCT s.schedule_id) AS schedules_count,
-    MIN(COALESCE(s.price, 0)) AS starting_price
+    MIN(COALESCE(s.price, 0)) AS starting_price,
+    COUNT(DISTINCT b.booking_id) AS booked_seats
   FROM flight f
   JOIN airline ai ON ai.airline_id = f.airline_id
   JOIN aircraft ac ON ac.aircraft_id = f.aircraft_id
   JOIN airport src ON src.airport_id = f.source_airport_id
   JOIN airport dst ON dst.airport_id = f.destination_airport_id
   LEFT JOIN schedule s ON s.flight_id = f.flight_id
+  LEFT JOIN booking b ON b.schedule_id = s.schedule_id
   GROUP BY
     f.flight_id,
     f.flight_number,

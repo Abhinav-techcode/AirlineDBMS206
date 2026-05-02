@@ -6,6 +6,7 @@
   "scripts": {
     "start": "node server.js",
     "dev": "nodemon server.js",
+    "db:init": "node utils/dbPipeline.js",
     "test": "node tests/integrationFlow.js"
   },
   "dependencies": {

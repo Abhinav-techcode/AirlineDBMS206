@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useState } from "react";
+import React, { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { useLocation, useNavigate } from "react-router-dom";
 
 import { apiRequest } from "../../utils/api";
@@ -113,10 +113,10 @@ const SeatSelection = () => {
 
   const passengerCount = Math.max(1, Number(state?.travelers || state?.passengerCount || 2));
   const flight = state?.flight || {
-    code: "FT101",
-    aircraft: "Boeing 737-800",
-    from: state?.from || "BOM",
-    to: state?.to || "CCU",
+    code: state?.flight_number || "N/A",
+    aircraft: state?.aircraft || "N/A",
+    from: state?.from || "N/A",
+    to: state?.to || "N/A",
     cabin: (state?.travelClass || "Economy").toUpperCase(),
   };
 
@@ -134,12 +134,54 @@ const SeatSelection = () => {
   const [loading, setLoading] = useState(true);
   const [errorMessage, setErrorMessage] = useState("");
   const [lockingSeatId, setLockingSeatId] = useState(null);
+  const [lockExpiry, setLockExpiry] = useState(null);
+  const [lockCountdown, setLockCountdown] = useState(0);
+  const lockTimerRef = useRef(null);
   const [passengerSeats, setPassengerSeats] = useState(() =>
     passengerTabs.reduce((accumulator, passenger) => {
       accumulator[passenger.id] = null;
       return accumulator;
     }, {})
   );
+
+  // --- Lock countdown timer ---
+  const clearLockTimer = useCallback(() => {
+    if (lockTimerRef.current) {
+      clearInterval(lockTimerRef.current);
+      lockTimerRef.current = null;
+    }
+  }, []);
+
+  useEffect(() => {
+    if (!lockExpiry) {
+      setLockCountdown(0);
+      clearLockTimer();
+      return;
+    }
+    const tick = () => {
+      const remaining = Math.max(0, Math.floor((new Date(lockExpiry).getTime() - Date.now()) / 1000));
+      setLockCountdown(remaining);
+      if (remaining <= 0) {
+        clearLockTimer();
+        setLockExpiry(null);
+        setPassengerSeats((current) => {
+          const next = {};
+          for (const key of Object.keys(current)) next[key] = null;
+          return next;
+        });
+        setErrorMessage("Seat lock expired. Please re-select your seats.");
+      }
+    };
+    tick();
+    lockTimerRef.current = setInterval(tick, 1000);
+    return clearLockTimer;
+  }, [lockExpiry, clearLockTimer]);
+
+  const formatCountdown = (seconds) => {
+    const m = Math.floor(seconds / 60);
+    const s = seconds % 60;
+    return `${m}:${String(s).padStart(2, "0")}`;
+  };
 
   const selectedSeats = useMemo(() => Object.values(passengerSeats).filter(Boolean), [passengerSeats]);
 
@@ -203,7 +245,7 @@ const SeatSelection = () => {
     setErrorMessage("");
 
     try {
-      await apiRequest("/seats/lock", {
+      const lockResponse = await apiRequest("/seats/lock", {
         method: "POST",
         body: {
           user_id: currentUserId,
@@ -211,6 +253,14 @@ const SeatSelection = () => {
           schedule_seat_id: seat.schedule_seat_id,
         },
       });
+
+      // Start / refresh 5-minute lock countdown
+      const expiresAt = lockResponse?.expires_at || lockResponse?.data?.expires_at;
+      if (expiresAt) {
+        setLockExpiry(expiresAt);
+      } else {
+        setLockExpiry(new Date(Date.now() + 5 * 60 * 1000).toISOString());
+      }
 
       setPassengerSeats((current) => {
         const next = { ...current };
@@ -295,16 +345,22 @@ const SeatSelection = () => {
         <section className="flight-strip">
           <strong>{flight.code}</strong>
           <span>
-            {flight.from} -> {flight.to} - {flight.aircraft} - {flight.cabin}
+            {flight.from} → {flight.to} - {flight.aircraft} - {flight.cabin}
           </span>
         </section>
 
         {errorMessage ? <div className="status-banner error">{errorMessage}</div> : null}
         {loading ? <div className="status-banner">Loading live seat map...</div> : null}
+        {lockCountdown > 0 ? (
+          <div className="status-banner lock-timer">
+            ⏱ Seat lock expires in <strong>{formatCountdown(lockCountdown)}</strong> — complete your selection before time runs out.
+          </div>
+        ) : null}
 
         <div className="legend">
           <span><i className="available" />Available</span>
-          <span><i className="occupied" />Occupied</span>
+          <span><i className="occupied" />Booked</span>
+          <span><i className="locked-legend" />Locked</span>
           <span><i className="selected" />Selected</span>
           <span><i className="window" />Window</span>
           <span><i className="legroom" />Extra Legroom</span>
@@ -331,9 +387,12 @@ const SeatSelection = () => {
                       (passenger) => passengerSeats[passenger.id]?.seatNumber === seat.seatNumber
                     );
 
+                    const statusClass = seat.status === "locked" ? "locked-seat"
+                      : seat.status === "occupied" ? "occupied"
+                      : "available";
                     const seatClass = [
                       "seat",
-                      seat.status === "occupied" || seat.status === "locked" ? "occupied" : "available",
+                      statusClass,
                       assignedPassenger ? "selected" : "",
                       seat.isWindow ? "window" : "",
                       seat.isExtraLegroom ? "legroom" : "",
@@ -541,7 +600,13 @@ const styles = `
   }
 
   .legend .occupied {
-    background: #e5e7eb;
+    background: #fca5a5;
+    border-color: #ef4444;
+  }
+
+  .legend .locked-legend {
+    background: #fde68a;
+    border-color: #f59e0b;
   }
 
   .legend .selected {
@@ -654,8 +719,16 @@ const styles = `
   }
 
   .seat.occupied {
-    background: #e5e7eb;
-    color: #9ca3af;
+    background: #fecaca;
+    border-color: #ef4444;
+    color: #991b1b;
+    cursor: not-allowed;
+  }
+
+  .seat.locked-seat {
+    background: #fef3c7;
+    border-color: #f59e0b;
+    color: #92400e;
     cursor: not-allowed;
   }
 

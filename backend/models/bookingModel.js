@@ -26,18 +26,11 @@ const updatePaymentStatus = async ({
   try {
     await connection.beginTransaction();
 
-    await connection.query(
-      `
-        UPDATE booking
-        SET payment_status = ?,
-            status = ?,
-            total_amount = ?
-        WHERE booking_id IN (${bookingIds.map(() => "?").join(", ")})
-      `,
-      [paymentStatus, bookingStatus, Number(amount || 0), ...bookingIds]
-    );
-
     for (const bookingId of bookingIds) {
+      // --- Payment table is the source of truth ---
+      // Update or insert into Payment FIRST.
+      // The sync_payment_status_insert/update triggers will propagate
+      // payment_status → Booking automatically.
       const [paymentRows] = await connection.query(
         `
           SELECT payment_id
@@ -70,6 +63,19 @@ const updatePaymentStatus = async ({
           [bookingId, Number(amount || 0), paymentStatus, paymentMethod, transactionId]
         );
       }
+
+      // Fallback: if sync triggers don't exist, update Booking directly.
+      // This is safe even if the trigger already ran — idempotent update.
+      await connection.query(
+        `
+          UPDATE booking
+          SET payment_status = ?,
+              status = ?,
+              total_amount = ?
+          WHERE booking_id = ?
+        `,
+        [paymentStatus, bookingStatus, Number(amount || 0), bookingId]
+      );
     }
 
     await connection.commit();

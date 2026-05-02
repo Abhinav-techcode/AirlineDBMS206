@@ -16,6 +16,7 @@ const instanceRoutes = require("./routes/instanceRoutes");
 const { notFound, errorHandler } = require("./middleware/errorMiddleware");
 const { loadSchema } = require("./utils/schemaHelper");
 const { ensureOperationalSchema } = require("./utils/operationalSchema");
+const { runSchemaPipeline } = require("./utils/dbPipeline");
 
 dotenv.config();
 
@@ -92,6 +93,12 @@ app.use(errorHandler);
 const PORT = Number(process.env.PORT || 5000);
 
 const startServer = async () => {
+  // ── Database injection pipeline: auto-create DB + apply schema.sql ──
+  const dbReport = await runSchemaPipeline({ silent: false });
+  if (!dbReport.success) {
+    console.warn("⚠️  Database pipeline reported issues — check logs above");
+  }
+
   await ensureOperationalSchema();
   await testConnection();
 

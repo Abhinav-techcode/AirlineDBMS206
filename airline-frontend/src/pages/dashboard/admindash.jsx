@@ -2,7 +2,7 @@ import React, { useEffect, useMemo, useState } from "react";
 
 import { apiRequest } from "../../utils/api";
 
-const airlineMenu = [
+const getAirlineMenu = (counts) => [
   {
     key: "dashboard",
     label: "Dashboard",
@@ -12,18 +12,18 @@ const airlineMenu = [
   {
     key: "aircraft-management",
     label: "Aircraft Management",
-    count: 4,
+    count: counts.aircraft,
     children: [
-      { key: "all-aircraft", label: "All Aircraft", count: 4 },
+      { key: "all-aircraft", label: "All Aircraft", count: counts.aircraft },
       { key: "create-aircraft", label: "Create Aircraft", count: null },
     ],
   },
   {
     key: "flight-management",
     label: "Flight Management",
-    count: 45,
+    count: counts.flights,
     children: [
-      { key: "all-flights", label: "All Flights", count: 45 },
+      { key: "all-flights", label: "All Flights", count: counts.flights },
       { key: "create-flight", label: "Create Flight", count: null },
       { key: "create-fare", label: "Create Fare", count: null },
       { key: "create-fare-rule", label: "Create Fare Rule", count: null },
@@ -33,18 +33,18 @@ const airlineMenu = [
   {
     key: "flight-schedules",
     label: "Flight Schedules",
-    count: 45,
+    count: counts.schedules,
     children: [
-      { key: "all-schedules", label: "All Schedules", count: 45 },
+      { key: "all-schedules", label: "All Schedules", count: counts.schedules },
       { key: "create-schedule", label: "Create Schedule", count: null },
     ],
   },
   {
     key: "flight-instances",
     label: "Flight Instances",
-    count: null,
+    count: counts.instances,
     children: [
-      { key: "all-instances", label: "All Instances", count: null },
+      { key: "all-instances", label: "All Instances", count: counts.instances },
       { key: "create-instance", label: "Create Instance", count: null },
     ],
   },
@@ -79,10 +79,10 @@ const airlineMenu = [
   {
     key: "bookings",
     label: "Bookings",
-    count: 234,
+    count: counts.bookings,
     children: [
       { key: "booking-statistics", label: "Booking Statistics", count: null },
-      { key: "all-bookings", label: "All Bookings", count: 234 },
+      { key: "all-bookings", label: "All Bookings", count: counts.bookings },
       { key: "transactions", label: "Transactions", count: null },
     ],
   },
@@ -867,11 +867,11 @@ const AdminDash = () => {
   const [activeTab, setActiveTab] = useState("dashboard-overview");
   const [superAdmin, setSuperAdmin] = useState(false);
   const [openSections, setOpenSections] = useState(defaultSections);
-  const [bookings, setBookings] = useState(bookingSeed);
-  const [aircraftList, setAircraftList] = useState(aircraftSeed);
-  const [flightList, setFlightList] = useState(flightSeed);
-  const [scheduleList, setScheduleList] = useState(scheduleSeed);
-  const [instanceList, setInstanceList] = useState(instanceSeed);
+  const [bookings, setBookings] = useState([]);
+  const [aircraftList, setAircraftList] = useState([]);
+  const [flightList, setFlightList] = useState([]);
+  const [scheduleList, setScheduleList] = useState([]);
+  const [instanceList, setInstanceList] = useState([]);
   const [airportList, setAirportList] = useState(Object.values(airportMap));
   const [selectedAircraft, setSelectedAircraft] = useState(defaultAircraft);
   const [selectedCabin, setSelectedCabin] = useState(defaultAircraft.cabinLayouts[0]);
@@ -991,7 +991,15 @@ const AdminDash = () => {
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  const menuItems = superAdmin ? [...airlineMenu, ...superAdminMenu] : airlineMenu;
+  const currentCounts = {
+    aircraft: aircraftList.length > 0 ? aircraftList.length : null,
+    flights: flightList.length > 0 ? flightList.length : null,
+    schedules: scheduleList.length > 0 ? scheduleList.length : null,
+    instances: instanceList.length > 0 ? instanceList.length : null,
+    bookings: bookings.length > 0 ? bookings.length : null,
+  };
+
+  const menuItems = superAdmin ? [...getAirlineMenu(currentCounts), ...superAdminMenu] : getAirlineMenu(currentCounts);
 
   const totalRevenue = bookings.reduce((sum, booking) => sum + Number(booking.amount_number || 0), 0);
 
@@ -1113,7 +1121,7 @@ const AdminDash = () => {
       case "create-aircraft":
         return <CreateAircraftView onCreated={loadLiveData} />;
       case "all-flights":
-        return <AllFlightsView flights={flightList} />;
+        return <AllFlightsView flights={flightList} metrics={dashboardMetrics} />;
       case "create-flight":
         return <CreateFlightView aircrafts={aircraftList} airports={airportList} onCreated={loadLiveData} />;
       case "create-fare":
@@ -1840,7 +1848,7 @@ const CreateAircraftView = ({ onCreated }) => {
   );
 };
 
-const AllFlightsView = ({ flights }) => (
+const AllFlightsView = ({ flights, metrics }) => (
   <div style={styles.stack24}>
     <div style={styles.sectionHeaderBar}>
       <div>
@@ -1850,26 +1858,12 @@ const AllFlightsView = ({ flights }) => (
     </div>
 
     <div style={styles.metricRow}>
-      <div style={{ ...styles.metricCard, background: "#dbeafe" }}>
-        <div style={{ ...styles.metricValue, color: "#2563eb" }}>{flights.length}</div>
-        <div style={styles.metricLabel}>Total Flights</div>
-      </div>
-      <div style={{ ...styles.metricCard, background: "#dcfce7" }}>
-        <div style={{ ...styles.metricValue, color: "#16a34a" }}>{flights.length}</div>
-        <div style={styles.metricLabel}>Active Flights</div>
-      </div>
-      <div style={{ ...styles.metricCard, background: "#f3e8ff" }}>
-        <div style={{ ...styles.metricValue, color: "#9333ea" }}>0</div>
-        <div style={styles.metricLabel}>Total Bookings</div>
-      </div>
-      <div style={{ ...styles.metricCard, background: "#fef3c7" }}>
-        <div style={{ ...styles.metricValue, color: "#d97706" }}>0%</div>
-        <div style={styles.metricLabel}>Avg Occupancy</div>
-      </div>
-      <div style={{ ...styles.metricCard, background: "#e0e7ff" }}>
-        <div style={{ ...styles.metricValue, color: "#4f46e5" }}>Rs 0.0L</div>
-        <div style={styles.metricLabel}>Revenue</div>
-      </div>
+      {metrics.map((metric) => (
+        <div key={metric.label} style={{ ...styles.metricCard, background: metric.accent }}>
+          <div style={{ ...styles.metricValue, color: metric.text }}>{metric.value}</div>
+          <div style={styles.metricLabel}>{metric.label}</div>
+        </div>
+      ))}
     </div>
 
     <div style={styles.listPageCard}>
@@ -3220,7 +3214,7 @@ const StatBar = ({ label, value, width, color }) => (
 );
 
 const getPageTitle = (tab) => {
-  const allItems = [...airlineMenu, ...superAdminMenu];
+  const allItems = [...getAirlineMenu({}), ...superAdminMenu];
   for (let index = 0; index < allItems.length; index += 1) {
     const item = allItems[index];
     if (item.key === tab) {
