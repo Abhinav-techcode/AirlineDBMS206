@@ -2,7 +2,7 @@
 
 A full-stack Airline Management System designed to simulate real-world airline operations including flight booking, seat management, payments, and administrative control.
 
-This project demonstrates strong integration of **frontend, backend, and advanced DBMS concepts**.
+This project demonstrates strong integration of **frontend, backend, and advanced DBMS concepts**, featuring an automated database injection pipeline for seamless deployment.
 
 ---
 
@@ -11,23 +11,23 @@ This project demonstrates strong integration of **frontend, backend, and advance
 ### 👤 User Features
 
 * 🔍 Search flights based on source, destination, and date
-* 💺 Seat selection with real-time seat locking
-* 💳 Secure booking and payment flow
-* 📋 View booking history
+* 💺 Seat selection with real-time seat locking (5-minute timer)
+* 💳 Secure booking and payment flow with atomic transactional integrity
+* 📋 View booking history with real-time status updates
 
 ### 🛠 Admin & Staff Features
 
-* 🧑‍✈️ Airline staff dashboard
-* 📊 Admin dashboard for system control
-* ✈️ Flight and schedule management
+* 🧑‍✈️ **Dynamic Dashboard:** Live statistics for flights, bookings, and revenue.
+* ✈️ **Flight Management:** Configure aircraft, schedules, and pricing.
+* 📊 **Automated Pipelines:** Zero-manual-config database management.
 
 ### 🧠 Advanced DBMS Concepts Used
 
-* 🔁 Triggers (auto seat updates, overbooking prevention)
-* ⚙️ Stored Procedures (booking, revenue calculation)
-* 📊 Functions (analytics like total revenue, seat availability)
-* 🔄 Cursors (iterative data processing)
-* 🔐 Transactions (safe booking with rollback support)
+* 🔁 **Triggers:** Automatic seat updates and payment-to-booking status synchronization.
+* ⚙️ **Stored Procedures:** Atomic `SafeBooking` procedure for error-free transactions.
+* 📊 **Functions:** Analytics like total revenue and seat availability.
+* 🔄 **Cursors:** Iterative data processing for complex schedule updates.
+* 🔐 **Transactions:** Full ACID compliance for booking and payment flows.
 
 ---
 
@@ -35,9 +35,9 @@ This project demonstrates strong integration of **frontend, backend, and advance
 
 | Layer    | Technology          |
 | -------- | ------------------- |
-| Frontend | React.js, CSS       |
+| Frontend | React.js, Vanilla CSS |
 | Backend  | Node.js, Express.js |
-| Database | MySQL               |
+| Database | MySQL (with automated injection) |
 
 ---
 
@@ -46,8 +46,8 @@ This project demonstrates strong integration of **frontend, backend, and advance
 ```bash
 airline-project/
 │── airline-frontend/   # React frontend
-│── backend/            # Express backend APIs
-│── database/           # SQL schema, procedures, triggers
+│── backend/            # Express backend + dbPipeline.js
+│── database/           # schema.sql (Idempotent source of truth)
 │── README.md
 ```
 
@@ -64,7 +64,22 @@ cd AirlineDBMS206
 
 ---
 
-### 🔹 2. Frontend Setup
+### 🔹 2. Backend & Database Setup (Automated)
+
+The project includes a custom **Database Injection Pipeline**. You do NOT need to manually run scripts in MySQL Workbench.
+
+1. Configure your environment in `backend/.env`.
+2. Install and initialize:
+```bash
+cd backend
+npm install
+npm run db:init   # This creates the DB and applies the schema automatically
+npm run dev       # Starts the server
+```
+
+---
+
+### 🔹 3. Frontend Setup
 
 ```bash
 cd airline-frontend
@@ -74,39 +89,21 @@ npm start
 
 ---
 
-### 🔹 3. Backend Setup
+## 🔑 Test Credentials
 
-```bash
-cd backend
-npm install
-npm start
-```
-
----
-
-### 🔹 4. Database Setup
-
-1. Open MySQL
-2. Run SQL scripts from the `database/` folder
-3. Ensure database connection is configured in backend
+| Role     | Username           | Password |
+| -------- | ------------------ | -------- |
+| Admin    | `admin@mail.com`   | `123`    |
+| Traveler | `Abhinav@gmail.com`| `12345`  |
 
 ---
 
-## 📸 Screenshots
+## 📸 Project Status
 
-> *(Add your UI screenshots here for better presentation)*
-
----
-
-## 🔮 Future Improvements
-
-* 💳 Real payment gateway integration
-* 📱 Mobile application support
-* 🔔 Real-time notifications
-* 🤖 AI-based fare prediction system
-
----
-
+* ✅ Automated Database Pipeline (Idempotent)
+* ✅ Transactional Integrity via DB Triggers
+* ✅ Dynamic Admin Dashboard Metrics
+* ✅ Real-time Seat Selection Logic
 
 ---
 
