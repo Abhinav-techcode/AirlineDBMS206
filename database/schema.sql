@@ -457,6 +457,9 @@ BEGIN
 END //
 
 DELIMITER ;
+-- ═══════════════════════════════
+-- Cursors 
+-- ═══════════════════════════════
 DELIMITER //
 
 CREATE PROCEDURE Cursor_SeatStatus(IN p_schedule_id INT)
