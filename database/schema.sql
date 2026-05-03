@@ -457,6 +457,95 @@ BEGIN
 END //
 
 DELIMITER ;
+DELIMITER //
+
+CREATE PROCEDURE Cursor_SeatStatus(IN p_schedule_id INT)
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_seat_id INT;
+    DECLARE v_status VARCHAR(20);
+
+    DECLARE cur_seat CURSOR FOR
+        SELECT schedule_seat_id, status
+        FROM Schedule_Seat
+        WHERE schedule_id = p_schedule_id;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur_seat;
+
+    read_loop: LOOP
+        FETCH cur_seat INTO v_seat_id, v_status;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT v_seat_id AS Seat_ID, v_status AS Seat_Status;
+    END LOOP;
+
+    CLOSE cur_seat;
+END //
+
+CREATE PROCEDURE Cursor_TotalRevenue()
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_amount DECIMAL(10,2);
+    DECLARE total DECIMAL(10,2) DEFAULT 0;
+
+    DECLARE cur_payment CURSOR FOR
+        SELECT amount 
+        FROM Payment 
+        WHERE payment_status = 'SUCCESS';
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur_payment;
+
+    read_loop: LOOP
+        FETCH cur_payment INTO v_amount;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SET total = total + v_amount;
+    END LOOP;
+
+    CLOSE cur_payment;
+
+    SELECT total AS Total_Revenue;
+END //
+
+CREATE PROCEDURE Cursor_UserBookings(IN p_user_id INT)
+BEGIN
+    DECLARE done INT DEFAULT 0;
+    DECLARE v_booking_id INT;
+    DECLARE v_amount DECIMAL(10,2);
+
+    DECLARE cur_booking CURSOR FOR
+        SELECT booking_id, total_amount
+        FROM Booking
+        WHERE user_id = p_user_id;
+
+    DECLARE CONTINUE HANDLER FOR NOT FOUND SET done = 1;
+
+    OPEN cur_booking;
+
+    read_loop: LOOP
+        FETCH cur_booking INTO v_booking_id, v_amount;
+
+        IF done THEN
+            LEAVE read_loop;
+        END IF;
+
+        SELECT v_booking_id AS Booking_ID, v_amount AS Amount;
+    END LOOP;
+
+    CLOSE cur_booking;
+END //
+
+DELIMITER ;
 
 -- ═══════════════════════════════
 -- SEED DATA (INSERT IGNORE — safe to re-run)
