@@ -169,6 +169,31 @@ CREATE TABLE IF NOT EXISTS Error_Log (
     created_at   TIMESTAMP DEFAULT CURRENT_TIMESTAMP
 );
 
+CREATE TABLE IF NOT EXISTS Meal (
+    meal_id     INT AUTO_INCREMENT PRIMARY KEY,
+    name        VARCHAR(100) NOT NULL,
+    type        ENUM('VEG', 'NON_VEG', 'VEGAN') NOT NULL,
+    category    ENUM('REGULAR', 'PREMIUM', 'SPECIAL') NOT NULL,
+    price       DECIMAL(10,2) NOT NULL,
+    description TEXT,
+    image_url   VARCHAR(255)
+);
+
+CREATE TABLE IF NOT EXISTS Passenger_Meal (
+    passenger_id INT NOT NULL,
+    meal_id      INT NOT NULL,
+    PRIMARY KEY (passenger_id, meal_id),
+    FOREIGN KEY (passenger_id) REFERENCES Passenger(passenger_id),
+    FOREIGN KEY (meal_id)      REFERENCES Meal(meal_id)
+);
+CREATE TABLE IF NOT EXISTS commissionrule (
+    rule_id               INT AUTO_INCREMENT PRIMARY KEY,
+    airline_id            INT NOT NULL,
+    commission_percentage DECIMAL(5,2) NOT NULL, -- Stores values like 12.50 for 12.5%
+    effective_from        DATE NOT NULL,         -- The date this commission rate starts
+    FOREIGN KEY (airline_id) REFERENCES Airline(airline_id)
+);
+
 SET FOREIGN_KEY_CHECKS = 1;
 
 -- ═══════════════════════════════
@@ -549,6 +574,7 @@ BEGIN
 END //
 
 DELIMITER ;
+
 
 -- ═══════════════════════════════
 -- SEED DATA (INSERT IGNORE — safe to re-run)
