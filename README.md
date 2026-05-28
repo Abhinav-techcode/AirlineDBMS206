@@ -6,7 +6,7 @@ This project demonstrates strong integration of **frontend, backend, and advance
 
 ---
 
-## 🚀 Features
+## 🚀 Features: 
 
 ### 👤 User Features
 
